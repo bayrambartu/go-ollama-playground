@@ -1,0 +1,23 @@
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: llm-chat-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: chatuser
+      POSTGRES_PASSWORD: chatpassword
+      POSTGRES_DB: llm_chat
+    ports:
+      - "5432:5432"
+    volumes:
+      - chat_postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatuser -d llm_chat"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  chat_postgres_data:
