@@ -13,6 +13,10 @@ type Message struct {
 	Role           string
 	Content        string
 }
+type Conversation struct {
+	ID    int64
+	Title string
+}
 
 type MessageRepository struct {
 	db *pgxpool.Pool
@@ -55,4 +59,37 @@ func (r *MessageRepository) GetByConversationID(
 	}
 
 	return messages, nil
+}
+
+func (r *MessageRepository) GetAllConversations(ctx context.Context) ([]Conversation, error) {
+	query := `
+		SELECT id, title
+		FROM conversations
+		ORDER BY id ASC
+	`
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("query conversations: %w", err)
+	}
+	defer rows.Close()
+
+	conversations := make([]Conversation, 0)
+
+	for rows.Next() {
+		var cnv Conversation
+
+		err := rows.Scan(&cnv.ID, &cnv.Title)
+
+		if err != nil {
+			return nil, fmt.Errorf("scan message: %w", err)
+		}
+
+		conversations = append(conversations, cnv)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate messages: %w", err)
+	}
+
+	return conversations, nil
+
 }

@@ -34,7 +34,7 @@ func main() {
 
 	messageRepo := repository.NewMessageRepository(db)
 
-	conversationIDs := []int64{1, 2}
+	conversationIDs := []int64{1, 2, 100}
 
 	for _, conversationID := range conversationIDs {
 		messages, err := messageRepo.GetByConversationID(
@@ -54,5 +54,20 @@ func main() {
 				msg.Content,
 			)
 		}
+	}
+
+	conversations, err := messageRepo.GetAllConversations(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("\n--- ALL CONVERSATIONS ---")
+
+	for _, cnv := range conversations {
+		fmt.Printf(
+			"Conversation %d - %s\n",
+			cnv.ID,
+			cnv.Title,
+		)
 	}
 }
