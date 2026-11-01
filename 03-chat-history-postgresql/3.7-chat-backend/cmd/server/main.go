@@ -50,8 +50,10 @@ func main() {
 
 	repo := repository.NewChatRepository(db)
 	chatService := service.NewChatService(repo, ollamaClient)
-	chatHandler := handler.NewChatHandler(chatService)
-
+	chatHandler := handler.NewChatHandler(
+		chatService,
+		cfg.RequestTimeout,
+	)
 	app := fiber.New()
 
 	app.Get("/health", func(c *fiber.Ctx) error {

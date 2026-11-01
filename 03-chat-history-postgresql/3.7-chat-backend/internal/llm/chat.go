@@ -2,10 +2,70 @@ package llm
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"net"
+	"net/url"
 	"strings"
 
 	"github.com/ollama/ollama/api"
 )
+
+var (
+	ErrModelUnavailable   = errors.New("ollama model unavailable")
+	ErrServiceUnavailable = errors.New("ollama service unavailable")
+)
+
+func classifyError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	// 1. Timeout
+	if errors.Is(err, context.DeadlineExceeded) {
+		return fmt.Errorf("ollama timeout: %w", err)
+	}
+
+	// 2. Canceled request
+	if errors.Is(err, context.Canceled) {
+		return fmt.Errorf("ollama canceled: %w", err)
+	}
+
+	// 3. Ollama HTTP error
+	var statusErr api.StatusError
+
+	if errors.As(err, &statusErr) {
+		if statusErr.StatusCode == 404 {
+			return fmt.Errorf(
+				"%w: %v",
+				ErrModelUnavailable,
+				err,
+			)
+		}
+	}
+
+	// 4. Network error
+	var netErr *net.OpError
+	if errors.As(err, &netErr) {
+		return fmt.Errorf(
+			"%w: %v",
+			ErrServiceUnavailable,
+			err,
+		)
+	}
+
+	// 5. URL / connection error
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		return fmt.Errorf(
+			"%w: %v",
+			ErrServiceUnavailable,
+			err,
+		)
+	}
+
+	return err
+}
 
 type Client struct {
 	client *api.Client
@@ -56,7 +116,7 @@ func (c *Client) Generate(
 		return nil
 	})
 	if err != nil {
-		return Result{}, err
+		return Result{}, classifyError(err)
 	}
 
 	result.Text = answer.String()
