@@ -1,0 +1,26 @@
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: llm-vector-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: vectoruser
+      POSTGRES_PASSWORD: vectorpassword
+      POSTGRES_DB: vector_db
+
+    ports:
+      - "5434:5432"
+
+    volumes:
+      - vector_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vectoruser -d vector_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  vector_data:
