@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+type Options struct {
+	Temperature float64 `json:"temperature"`
+	TopP        float64 `json:"top_p"`
+}
 type Client struct {
 	httpClient *http.Client
 	url        string
@@ -25,6 +29,7 @@ type ChatRequest struct {
 	Model    string    `json:"model"`
 	Messages []Message `json:"messages"`
 	Stream   bool      `json:"stream"`
+	Options  Options   `json:"options"`
 }
 
 type ChatResponse struct {
@@ -59,6 +64,10 @@ func (c *Client) Generate(
 			},
 		},
 		Stream: false,
+		Options: Options{
+			Temperature: 0,
+			TopP:        0.8,
+		},
 	}
 
 	body, err := json.Marshal(payload)
